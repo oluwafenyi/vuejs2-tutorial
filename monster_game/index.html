@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue.js</title>
+    <script src="vue.js"></script>
+</head>
+<body>
+
+    <div id="app">
+        <div class="health-status">
+            <h2>YOU</h2>
+            <div class="health-status__bar">
+                <div class="health-status__bar--fluid" :style="{width: playerHealth + '%'}" :class="{critical: playerHealth < 30}">{{ playerHealth }}</div>
+            </div>
+        </div>
+        <div class="health-status">
+            <h2>MONSTER</h2>
+            <div class="health-status__bar">
+                <div class="health-status__bar--fluid" :style="{width: monsterHealth + '%'}" :class="{critical: monsterHealth < 30}">{{ monsterHealth }}</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <template v-if="isPlaying">
+                <button class="button pink" @click="attack">Attack</button>
+                <button class="button" :class="{mustard: specialAttacks > 0}" @click="makeSpecialAttack">Special Attack</button>
+                <button class="button green" @click="heal">Heal</button>
+                <button class="button" @click="giveUp">Give Up</button>
+            </template>
+
+            <button v-else class="button green" @click="startNewGame">Start New Game</button>
+        </div>
+
+        <div v-if="moves.length > 0" class="panel moves">
+            <ul>
+                <li class="move" v-for="move in moves" :key="move" :class="move.player">
+                    {{ move.message }}
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                isPlaying: false,
+                playerHealth: 100,
+                monsterHealth: 100,
+                moves: [],
+                specialAttacks: 3,
+            },
+            methods: {
+                startNewGame() {
+                    this.moves = [];
+                    this.isPlaying = true;
+                    this.playerHealth = 100;
+                    this.monsterHealth = 100;
+                    this.specialAttacks = 3;
+                },
+                getRandomNumber(max, min) {
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                },
+                monsterMakeMove() {
+                    let randomNum = this.getRandomNumber(1, 11);
+
+                    if (randomNum > 3){
+                        randomNum = this.getRandomNumber(2, 10);
+                        if (this.playerHealth - randomNum <= 0) {
+                            this.playerHealth = 0;
+                            this.isPlaying = false;
+                            alert('Game over, monster wins!');
+                        } else {
+                            this.playerHealth -= randomNum;
+                        }
+                        this.moves.unshift({
+                            player: 'monster',
+                            message: `Monster hits player for ${randomNum}`,
+                        });
+                    } else {
+                        randomNum = this.getRandomNumber(7, 15);
+                        if (randomNum + this.monsterHealth >= 100){
+                            this.monsterHealth = 100;
+                        } else {
+                            this.monsterHealth += randomNum;
+                        }
+                        this.moves.unshift({
+                            player: 'monster',
+                            message: `Monster heals itself for ${randomNum}`,
+                        });
+                    }
+                },
+                attack() {
+                    const randomNum = this.getRandomNumber(2, 8);
+                    if (this.monsterHealth - randomNum <= 0) {
+                        this.monsterHealth = 0;
+                        this.isPlaying = false;
+                        alert('Congratulations, player wins!');
+                    } else {
+                        this.monsterHealth -= randomNum;
+                    }
+                    this.moves.unshift({
+                        player: 'player',
+                        message: `Player hits monster for ${randomNum}`,
+                    });
+                    this.monsterMakeMove();
+                },
+                heal() {
+                    const randomNum = this.getRandomNumber(6, 11);
+                    if (randomNum + this.playerHealth <= 100){
+                        this.playerHealth += randomNum;
+                    } else {
+                        this.playerHealth = 100;
+                    }
+                    this.moves.unshift({
+                        player: 'player',
+                        message: `Player heals self for ${randomNum}`,
+                    });
+                    this.monsterMakeMove();
+                },
+                makeSpecialAttack() {
+                    if (this.specialAttacks > 0) {
+                        const randomNum = this.getRandomNumber(15, 30);
+                        if (this.monsterHealth - randomNum <= 0) {
+                            this.monsterHealth = 0;
+                            this.isPlaying = false;
+                            alert('Congratulations, player wins!');
+                        } else {
+                            this.monsterHealth -= randomNum;
+                        }
+                        this.moves.unshift({
+                            player: 'player',
+                            message: `Player hits monster with special attack for ${randomNum}`,
+                        });
+                        this.monsterMakeMove();
+                        this.specialAttacks--;
+                    }
+                },
+                giveUp() {
+                    alert('Player gives up, monster wins!');
+                    this.isPlaying = false;
+                }
+            },
+        });
+    </script>
+
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        #app {
+            text-align: center;
+            margin-top: 20px;
+            vertical-align: middle;
+        }
+
+        .health-status {
+            margin: 0 20px;
+            padding: 20px;
+            width: 400px;
+            display: inline-block;
+        }
+
+        .health-status__bar {
+            color: white;
+            border: 2px black solid;
+        }
+
+        .health-status__bar--fluid {
+            background: green;
+            padding: 20px 0;
+            height: 10px;
+        }
+
+        .panel {
+            padding: 50px 0;
+            width: 60%;
+            border: 1px whitesmoke solid;
+            box-shadow: 0 2px #d8d3d3;
+            margin: 10px auto;
+        }
+
+        .button {
+            padding:10px 2px;
+            width: 125px;
+            margin: 0 10px;
+            background: white;
+            border: 1px solid grey;
+            border-radius: 5px;
+            box-shadow: 0 1.5px #c4c0c0;
+        }
+
+        .button:focus, .button:hover {
+            border: 1px solid #05b8ff;
+            border-radius: 5px;
+            outline: none;
+            box-shadow: 0 1.5px #2299c9;
+        }
+
+        .pink {
+            background: #f8a5a5;
+        }
+
+        .mustard {
+            background: #f0c169;
+        }
+
+        .green {
+            background: #82df82;
+        }
+
+        .moves {
+            margin-top: 60px;
+        }
+
+        .move {
+            list-style: none;
+            margin: 10px 0;
+        }
+
+        .move.player {
+            background: #6af0e9;
+            color: black;
+        }
+
+        .move.monster {
+            background: #ce5757;
+            color: black;
+        }
+
+        .critical {
+            background: red;
+        }
+
+    </style>
+</body>
+</html>
